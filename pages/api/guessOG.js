@@ -5,6 +5,7 @@ export const config = {
 };
 
 export default async function handler(req) {
+  console.log('guessOG handler called');
   try {
     const { searchParams } = new URL(req.url);
     const question = searchParams.get('question');
@@ -58,7 +59,10 @@ export default async function handler(req) {
     return image;
   } catch (error) {
     console.error('Error generating image:', error);
-    return new Response(`Error generating image: ${error.message}`, { status: 500 });
+    return new Response(`Error generating image: ${error.message}`, {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' },
+    });
   }
 }
 
