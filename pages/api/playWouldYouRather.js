@@ -31,10 +31,7 @@ export default async function handler(req) {
     const options = generateOptions(question.question);
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
-    console.log('OG Image URL:', ogImageUrl);
-
-    const shareText = encodeURIComponent(`I'm playing Would You Rather! My question: ${question.question}\n\nPlay now:`);
-    const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
+    console.log('Generated OG Image URL:', ogImageUrl);
 
     const html = `
       <!DOCTYPE html>
@@ -45,9 +42,6 @@ export default async function handler(req) {
           <meta property="fc:frame:image" content="${ogImageUrl}" />
           <meta property="fc:frame:button:1" content="${options[0]}" />
           <meta property="fc:frame:button:2" content="${options[1]}" />
-          <meta property="fc:frame:button:3" content="Share" />
-          <meta property="fc:frame:button:3:action" content="link" />
-          <meta property="fc:frame:button:3:target" content="${shareLink}" />
           <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
         </head>
         <body>

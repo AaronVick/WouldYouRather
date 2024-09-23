@@ -9,6 +9,8 @@ export default async function handler(req) {
     const { searchParams } = new URL(req.url);
     const question = searchParams.get('question');
 
+    console.log('Received question for image generation:', question);
+
     if (!question) {
       throw new Error('Question not provided');
     }
@@ -16,7 +18,9 @@ export default async function handler(req) {
     // Generate two options from the question
     const options = generateOptions(question);
 
-    return new ImageResponse(
+    console.log('Generated options:', options);
+
+    const image = new ImageResponse(
       (
         <div
           style={{
@@ -49,9 +53,12 @@ export default async function handler(req) {
         height: 630,
       }
     );
+
+    console.log('Image generated successfully');
+    return image;
   } catch (error) {
     console.error('Error generating image:', error);
-    return new Response('Error generating image', { status: 500 });
+    return new Response(`Error generating image: ${error.message}`, { status: 500 });
   }
 }
 
