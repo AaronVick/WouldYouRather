@@ -1,4 +1,18 @@
 import { NextResponse } from 'next/server';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export const config = {
   runtime: 'edge',
@@ -14,22 +28,43 @@ export default async function handler(req) {
 
   try {
     console.log('Fetching question...');
-    const questionData = await fetchQuestion();  // Fetch question from API
+    const questionData = await fetchQuestion();
+    console.log('Fetched question:', JSON.stringify(questionData));
 
     if (!questionData || !Array.isArray(questionData) || questionData.length === 0) {
       throw new Error('Invalid question data received');
     }
 
     const question = questionData[0];
-    const questionId = 'exampleQuestionId';  // You can replace this with your Firebase dynamic questionId logic
+    const questionText = question.question;
 
-    if (!question.question) {
+    if (!questionText) {
       throw new Error('Question text is missing');
     }
 
-    const options = generateOptions(question.question);
+    // Check if the question is already in Firebase
+    let questionId;
+    const questionRef = doc(db, 'Questions', questionText);
+    const questionDoc = await getDoc(questionRef);
 
-    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
+    if (questionDoc.exists()) {
+      // Question already exists, use the existing questionId
+      questionId = questionDoc.id;
+    } else {
+      // Question does not exist, add it to Firebase
+      const newQuestionRef = doc(db, 'Questions');
+      await setDoc(newQuestionRef, {
+        questionText: questionText,
+        optionOneVotes: 0,
+        optionTwoVotes: 0,
+      });
+      questionId = newQuestionRef.id;  // Firebase-generated questionId
+    }
+
+    // Generate two random options
+    const options = generateOptions(questionText);
+
+    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(questionText)}`;
     console.log('Generated OG Image URL:', ogImageUrl);
 
     // Return HTML response with proper Farcaster metadata for buttons and images
@@ -46,35 +81,29 @@ export default async function handler(req) {
         </head>
         <body>
           <h1>Would You Rather</h1>
-          <p>${question.question}</p>
+          <p>${questionText}</p>
         </body>
       </html>
     `;
 
-    console.log('Sending HTML response with question and Farcaster metadata');
-    return new NextResponse(
-      JSON.stringify({
-        html: html,
-        questionId: questionId,  // Pass the dynamic questionId
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    console.log('Sending HTML response');
+    return new NextResponse(html, {
+      headers: { 'Content-Type': 'text/html' },
+    });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
     return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
   }
 }
 
-// Define fetchQuestion function
+// Function to fetch a random question from the external API
 async function fetchQuestion() {
   const url = 'https://would-you-rather.p.rapidapi.com/wyr/random';
   const options = {
     method: 'GET',
     headers: {
       'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com',
+      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
     }
   };
 
@@ -96,7 +125,7 @@ async function fetchQuestion() {
   }
 }
 
-// Helper function to generate options from question
+// Helper function to split the question into options
 function generateOptions(question) {
   const parts = question.split(' or ');
   const option1 = parts[0].replace('Would you rather ', '').trim();
