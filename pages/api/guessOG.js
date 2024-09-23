@@ -33,20 +33,20 @@ export default async function handler(req) {
             justifyContent: 'center',
             backgroundColor: '#1E1E1E',
             color: '#FFFFFF',
-            padding: '20px',
+            padding: '40px',
           }}
         >
-          <div style={{ display: 'flex', fontSize: '48px', fontWeight: 'bold', color: '#FF5733', marginBottom: '20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', fontSize: '72px', fontWeight: 'bold', color: '#4A90E2', marginBottom: '40px', textAlign: 'center' }}>
             Would You Rather
           </div>
-          <div style={{ display: 'flex', fontSize: '32px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', fontSize: '44px', textAlign: 'center', maxWidth: '90%', wordWrap: 'break-word', marginBottom: '40px' }}>
             {question}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            <div style={{ display: 'flex', fontSize: '28px', marginTop: '20px', textAlign: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '20px' }}>
+            <div style={{ display: 'flex', fontSize: '36px', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
               1. {options[0]}
             </div>
-            <div style={{ display: 'flex', fontSize: '28px', marginTop: '10px', textAlign: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', fontSize: '36px', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
               2. {options[1]}
             </div>
           </div>
