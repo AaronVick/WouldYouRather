@@ -14,14 +14,23 @@ export default async function handler(req) {
 
   try {
     console.log('Fetching question...');
-    const question = await fetchQuestion();
-    console.log('Fetched question:', question);
+    const questionData = await fetchQuestion();
+    console.log('Fetched question:', JSON.stringify(questionData));
 
-    if (!question) {
+    if (!questionData || !Array.isArray(questionData) || questionData.length === 0) {
       throw new Error('Invalid question data received');
     }
 
-    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
+    const question = questionData[0];
+
+    if (!question.question) {
+      throw new Error('Question text is missing');
+    }
+
+    // Generate two random options
+    const options = generateOptions(question.question);
+
+    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
     console.log('OG Image URL:', ogImageUrl);
 
     const shareText = encodeURIComponent(`I'm playing Would You Rather! My question: ${question.question}\n\nPlay now:`);
@@ -34,12 +43,12 @@ export default async function handler(req) {
           <title>Would You Rather</title>
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${ogImageUrl}" />
-          <meta property="fc:frame:button:1" content="${question.option_1}" />
-          <meta property="fc:frame:button:2" content="${question.option_2}" />
+          <meta property="fc:frame:button:1" content="${options[0]}" />
+          <meta property="fc:frame:button:2" content="${options[1]}" />
           <meta property="fc:frame:button:3" content="Share" />
           <meta property="fc:frame:button:3:action" content="link" />
           <meta property="fc:frame:button:3:target" content="${shareLink}" />
-          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${question.id}" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
         </head>
         <body>
           <h1>Would You Rather</h1>
@@ -84,4 +93,17 @@ async function fetchQuestion() {
     console.error('Error fetching question:', error);
     throw error;
   }
+}
+
+function generateOptions(question) {
+  // Split the question at "or"
+  const parts = question.split(" or ");
+  
+  // Remove "Would you rather " from the first part
+  const option1 = parts[0].replace("Would you rather ", "").trim();
+  
+  // Remove any trailing punctuation from the second part
+  const option2 = parts[1].replace(/[?.!]$/, "").trim();
+  
+  return [option1, option2];
 }

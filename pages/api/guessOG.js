@@ -1,18 +1,4 @@
 import { ImageResponse } from '@vercel/og';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 export const config = {
   runtime: 'edge',
@@ -21,14 +7,14 @@ export const config = {
 export default async function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const questionId = searchParams.get('questionId');
+    const question = searchParams.get('question');
 
-    const questionDoc = await getDoc(doc(db, 'Questions', questionId));
-    if (!questionDoc.exists()) {
-      throw new Error('Question not found');
+    if (!question) {
+      throw new Error('Question not provided');
     }
 
-    const questionData = questionDoc.data();
+    // Generate two options from the question
+    const options = generateOptions(question);
 
     return new ImageResponse(
       (
@@ -48,13 +34,13 @@ export default async function handler(req) {
             Would You Rather
           </div>
           <div style={{ fontSize: '32px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word' }}>
-            {questionData.text}
+            {question}
           </div>
           <div style={{ fontSize: '28px', marginTop: '20px' }}>
-            1. {questionData.optionOneText}
+            1. {options[0]}
           </div>
           <div style={{ fontSize: '28px', marginTop: '10px' }}>
-            2. {questionData.optionTwoText}
+            2. {options[1]}
           </div>
         </div>
       ),
@@ -67,4 +53,17 @@ export default async function handler(req) {
     console.error('Error generating image:', error);
     return new Response('Error generating image', { status: 500 });
   }
+}
+
+function generateOptions(question) {
+  // Split the question at "or"
+  const parts = question.split(" or ");
+  
+  // Remove "Would you rather " from the first part
+  const option1 = parts[0].replace("Would you rather ", "").trim();
+  
+  // Remove any trailing punctuation from the second part
+  const option2 = parts[1].replace(/[?.!]$/, "").trim();
+  
+  return [option1, option2];
 }
