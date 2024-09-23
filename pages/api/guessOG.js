@@ -33,19 +33,22 @@ export default async function handler(req) {
             justifyContent: 'center',
             backgroundColor: '#1E1E1E',
             color: '#FFFFFF',
+            padding: '20px',
           }}
         >
-          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#FF5733', marginBottom: '20px' }}>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#FF5733', marginBottom: '20px', textAlign: 'center' }}>
             Would You Rather
           </div>
-          <div style={{ fontSize: '32px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word' }}>
+          <div style={{ fontSize: '32px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word', marginBottom: '20px' }}>
             {question}
           </div>
-          <div style={{ fontSize: '28px', marginTop: '20px' }}>
-            1. {options[0]}
-          </div>
-          <div style={{ fontSize: '28px', marginTop: '10px' }}>
-            2. {options[1]}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <div style={{ fontSize: '28px', marginTop: '20px', textAlign: 'center', width: '100%' }}>
+              1. {options[0]}
+            </div>
+            <div style={{ fontSize: '28px', marginTop: '10px', textAlign: 'center', width: '100%' }}>
+              2. {options[1]}
+            </div>
           </div>
         </div>
       ),
