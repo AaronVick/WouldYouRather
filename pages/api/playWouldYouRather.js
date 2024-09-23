@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import https from 'https';
 
 export const config = {
   runtime: 'edge',
@@ -7,12 +8,12 @@ export const config = {
 export default async function handler(req) {
   console.log('Received request method:', req.method);
 
-  try {
-    if (req.method !== 'POST') {
-      console.log('Method not allowed:', req.method);
-      return new NextResponse('Method Not Allowed', { status: 405 });
-    }
+  if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
+    return new NextResponse('Method Not Allowed', { status: 405 });
+  }
 
+  try {
     console.log('Fetching question...');
     const question = await fetchQuestion();
     console.log('Fetched question:', JSON.stringify(question));
@@ -58,26 +59,44 @@ export default async function handler(req) {
   }
 }
 
-async function fetchQuestion() {
-  console.log('Fetching question from API...');
-  try {
-    const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
+function fetchQuestion() {
+  return new Promise((resolve, reject) => {
+    console.log('Fetching question from API...');
+    const options = {
       method: 'GET',
+      hostname: 'would-you-rather.p.rapidapi.com',
+      port: null,
+      path: '/wyr/random',
       headers: {
         'x-rapidapi-key': process.env.XRapidAPIKey,
         'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
       }
+    };
+
+    const req = https.request(options, function (res) {
+      const chunks = [];
+
+      res.on('data', function (chunk) {
+        chunks.push(chunk);
+      });
+
+      res.on('end', function () {
+        const body = Buffer.concat(chunks);
+        console.log('API response:', body.toString());
+        try {
+          const data = JSON.parse(body.toString());
+          resolve(data);
+        } catch (error) {
+          reject(new Error('Failed to parse API response'));
+        }
+      });
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    req.on('error', function (error) {
+      console.error('Error fetching question:', error);
+      reject(error);
+    });
 
-    const data = await response.json();
-    console.log('API response:', JSON.stringify(data));
-    return data;
-  } catch (error) {
-    console.error('Error fetching question:', error);
-    throw error;
-  }
+    req.end();
+  });
 }
