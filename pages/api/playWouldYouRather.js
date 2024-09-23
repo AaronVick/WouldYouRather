@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     port: null,
     path: '/wyr/random',
     headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey, // Use Vercel environment variable for the API key
+      'x-rapidapi-key': process.env.XRapidAPIKey,
       'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
     }
   };
@@ -47,6 +47,7 @@ export default async function handler(req, res) {
   });
 
   reqAPI.on('error', function (error) {
+    console.error('Error fetching question:', error);
     res.status(500).json({ error: 'Error fetching question' });
   });
 
