@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 
+// Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -22,52 +23,49 @@ export default async function handler(req) {
   console.log('Received request method:', req.method);
 
   if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method);
     return new NextResponse('Method Not Allowed', { status: 405 });
   }
 
   try {
+    const fid = req.headers.get('farcaster-fid'); // Assuming the fid comes from Farcaster headers.
+    console.log('Farcaster fid:', fid);
+
     console.log('Fetching question...');
     const questionData = await fetchQuestion();
-    console.log('Fetched question:', JSON.stringify(questionData));
-
-    if (!questionData || !Array.isArray(questionData) || questionData.length === 0) {
-      throw new Error('Invalid question data received');
-    }
-
-    const question = questionData[0];
-    const questionText = question.question;
+    const questionText = questionData[0]?.question;
 
     if (!questionText) {
       throw new Error('Question text is missing');
     }
 
-    // Check if the question is already in Firebase
-    let questionId;
-    const questionRef = doc(db, 'Questions', questionText);
-    const questionDoc = await getDoc(questionRef);
+    // Generate two random options from the question text
+    const options = generateOptions(questionText);
 
-    if (questionDoc.exists()) {
-      // Question already exists, use the existing questionId
-      questionId = questionDoc.id;
+    // Check if the question already exists in Firebase
+    let questionId;
+    const questionsRef = collection(db, 'Questions');
+    const q = query(questionsRef, where('questionText', '==', questionText));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      // Question exists, use the existing document ID
+      questionId = querySnapshot.docs[0].id;
+      console.log('Question already exists in Firebase with ID:', questionId);
     } else {
-      // Question does not exist, add it to Firebase
-      const newQuestionRef = doc(db, 'Questions');
-      await setDoc(newQuestionRef, {
+      // Question does not exist, so add it to Firebase
+      const newQuestionRef = await addDoc(collection(db, 'Questions'), {
         questionText: questionText,
         optionOneVotes: 0,
         optionTwoVotes: 0,
       });
-      questionId = newQuestionRef.id;  // Firebase-generated questionId
+      questionId = newQuestionRef.id;
+      console.log('Added new question to Firebase with ID:', questionId);
     }
-
-    // Generate two random options
-    const options = generateOptions(questionText);
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(questionText)}`;
     console.log('Generated OG Image URL:', ogImageUrl);
 
-    // Return HTML response with proper Farcaster metadata for buttons and images
+    // Return HTML with Farcaster frame metadata
     const html = `
       <!DOCTYPE html>
       <html>
@@ -77,7 +75,7 @@ export default async function handler(req) {
           <meta property="fc:frame:image" content="${ogImageUrl}" />
           <meta property="fc:frame:button:1" content="${options[0]}" />
           <meta property="fc:frame:button:2" content="${options[1]}" />
-          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${questionId}&fid=${fid}" />
         </head>
         <body>
           <h1>Would You Rather</h1>
@@ -86,7 +84,7 @@ export default async function handler(req) {
       </html>
     `;
 
-    console.log('Sending HTML response');
+    console.log('Sending HTML response with frame metadata');
     return new NextResponse(html, {
       headers: { 'Content-Type': 'text/html' },
     });
@@ -96,7 +94,7 @@ export default async function handler(req) {
   }
 }
 
-// Function to fetch a random question from the external API
+// Fetch a random question from the Would You Rather API
 async function fetchQuestion() {
   const url = 'https://would-you-rather.p.rapidapi.com/wyr/random';
   const options = {
@@ -108,24 +106,17 @@ async function fetchQuestion() {
   };
 
   console.log('Fetching question from API...');
-  console.log('API Key (last 4 chars):', process.env.XRapidAPIKey ? process.env.XRapidAPIKey.slice(-4) : 'Not set');
+  const response = await fetch(url, options);
 
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      console.error('API Response:', response.status, response.statusText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const result = await response.json();
-    console.log('API response:', JSON.stringify(result));
-    return result;
-  } catch (error) {
-    console.error('Error fetching question:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  const result = await response.json();
+  return result;
 }
 
-// Helper function to split the question into options
+// Split the question text into two options
 function generateOptions(question) {
   const parts = question.split(' or ');
   const option1 = parts[0].replace('Would you rather ', '').trim();
