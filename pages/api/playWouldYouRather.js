@@ -15,16 +15,16 @@ export default async function handler(req) {
   try {
     console.log('Fetching question...');
     const question = await fetchQuestion();
-    console.log('Fetched question:', JSON.stringify(question));
+    console.log('Fetched question:', question);
 
-    if (!question || !question.data) {
+    if (!question) {
       throw new Error('Invalid question data received');
     }
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
     console.log('OG Image URL:', ogImageUrl);
 
-    const shareText = encodeURIComponent(`I'm playing Would You Rather! My question: ${question.data.question}\n\nPlay now:`);
+    const shareText = encodeURIComponent(`I'm playing Would You Rather! My question: ${question.question}\n\nPlay now:`);
     const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
 
     const html = `
@@ -34,8 +34,8 @@ export default async function handler(req) {
           <title>Would You Rather</title>
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${ogImageUrl}" />
-          <meta property="fc:frame:button:1" content="${question.data.optionOne}" />
-          <meta property="fc:frame:button:2" content="${question.data.optionTwo}" />
+          <meta property="fc:frame:button:1" content="${question.option_1}" />
+          <meta property="fc:frame:button:2" content="${question.option_2}" />
           <meta property="fc:frame:button:3" content="Share" />
           <meta property="fc:frame:button:3:action" content="link" />
           <meta property="fc:frame:button:3:target" content="${shareLink}" />
@@ -43,7 +43,7 @@ export default async function handler(req) {
         </head>
         <body>
           <h1>Would You Rather</h1>
-          <p>${question.data.question}</p>
+          <p>${question.question}</p>
         </body>
       </html>
     `;
@@ -59,20 +59,29 @@ export default async function handler(req) {
 }
 
 async function fetchQuestion() {
-  console.log('Fetching question from API...');
-  const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
+  const url = 'https://would-you-rather.p.rapidapi.com/wyr/random';
+  const options = {
     method: 'GET',
     headers: {
       'x-rapidapi-key': process.env.XRapidAPIKey,
       'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
     }
-  });
+  };
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+  console.log('Fetching question from API...');
+  console.log('API Key (last 4 chars):', process.env.XRapidAPIKey ? process.env.XRapidAPIKey.slice(-4) : 'Not set');
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      console.error('API Response:', response.status, response.statusText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+    console.log('API response:', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('Error fetching question:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('API response:', JSON.stringify(data));
-  return data;
 }
