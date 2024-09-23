@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, updateDoc, increment } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc, getDoc, setDoc, increment } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -27,10 +27,20 @@ export default async function handler(req) {
     const body = await req.json();
     const { questionId, fid, option } = body;
 
+    if (!questionId || !fid || !option) {
+      return new NextResponse('Missing parameters', { status: 400 });
+    }
+
     // Update vote count in Questions collection
     const questionRef = doc(db, 'Questions', questionId);
+    const questionDoc = await getDoc(questionRef);
+
+    if (!questionDoc.exists()) {
+      return new NextResponse('Question not found', { status: 404 });
+    }
+
     const updateField = option === 'optionOne' ? 'optionOneVotes' : 'optionTwoVotes';
-    
+
     await updateDoc(questionRef, {
       [updateField]: increment(1),
       totalVotes: increment(1),
@@ -38,9 +48,21 @@ export default async function handler(req) {
 
     // Update user's response in UserResponses collection
     const userRef = doc(db, 'UserResponses', fid);
-    await updateDoc(userRef, {
-      [`answeredQuestions.${questionId}`]: option,
-    });
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+      // Create new document if not present
+      await setDoc(userRef, {
+        answeredQuestions: {
+          [questionId]: option
+        }
+      });
+    } else {
+      // Update existing document
+      await updateDoc(userRef, {
+        [`answeredQuestions.${questionId}`]: option,
+      });
+    }
 
     // Generate the next question
     const nextQuestion = await fetchNextQuestion();
