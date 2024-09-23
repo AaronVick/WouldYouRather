@@ -27,7 +27,6 @@ export default async function handler(req) {
       throw new Error('Question text is missing');
     }
 
-    // Generate two random options
     const options = generateOptions(question.question);
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
@@ -90,13 +89,8 @@ async function fetchQuestion() {
 }
 
 function generateOptions(question) {
-  // Split the question at "or"
   const parts = question.split(" or ");
-  
-  // Remove "Would you rather " from the first part
   const option1 = parts[0].replace("Would you rather ", "").trim();
-  
-  // Remove any trailing punctuation from the second part
   const option2 = parts[1].replace(/[?.!]$/, "").trim();
   
   return [option1, option2];

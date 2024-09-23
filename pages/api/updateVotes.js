@@ -28,14 +28,15 @@ export default async function handler(req) {
     const { questionId, fid, option } = body;
 
     if (!questionId || !fid || !option) {
+      console.error('Missing parameters:', { questionId, fid, option });
       return new NextResponse('Missing parameters', { status: 400 });
     }
 
-    // Update vote count in Questions collection
     const questionRef = doc(db, 'Questions', questionId);
     const questionDoc = await getDoc(questionRef);
 
     if (!questionDoc.exists()) {
+      console.error('Question not found:', questionId);
       return new NextResponse('Question not found', { status: 404 });
     }
 
@@ -46,28 +47,22 @@ export default async function handler(req) {
       totalVotes: increment(1),
     });
 
-    // Update user's response in UserResponses collection
     const userRef = doc(db, 'UserResponses', fid);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      // Create new document if not present
       await setDoc(userRef, {
         answeredQuestions: {
           [questionId]: option
         }
       });
     } else {
-      // Update existing document
       await updateDoc(userRef, {
         [`answeredQuestions.${questionId}`]: option,
       });
     }
 
-    // Generate the next question
     const nextQuestion = await fetchNextQuestion();
-
-    // Create the HTML response for the next frame
     const html = generateNextFrameHtml(nextQuestion);
 
     return new NextResponse(html, {
@@ -78,52 +73,4 @@ export default async function handler(req) {
     console.error('Error in updateVotes:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-}
-
-async function fetchNextQuestion() {
-  const url = 'https://would-you-rather.p.rapidapi.com/wyr/random';
-  const options = {
-    method: 'GET',
-    headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
-    }
-  };
-
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  const result = await response.json();
-  return result[0];
-}
-
-function generateNextFrameHtml(question) {
-  const options = generateOptions(question.question);
-  const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Would You Rather</title>
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="${ogImageUrl}" />
-        <meta property="fc:frame:button:1" content="${options[0]}" />
-        <meta property="fc:frame:button:2" content="${options[1]}" />
-        <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
-      </head>
-      <body>
-        <h1>Would You Rather</h1>
-        <p>${question.question}</p>
-      </body>
-    </html>
-  `;
-}
-
-function generateOptions(question) {
-  const parts = question.split(" or ");
-  const option1 = parts[0].replace("Would you rather ", "").trim();
-  const option2 = parts[1].replace(/[?.!]$/, "").trim();
-  return [option1, option2];
 }
