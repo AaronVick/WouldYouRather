@@ -14,14 +14,14 @@ export default async function handler(req) {
 
   try {
     console.log('Fetching question...');
-    const questionData = await fetchQuestion();  // Fetch question from the API
+    const questionData = await fetchQuestion();  // Fetch question from API
 
     if (!questionData || !Array.isArray(questionData) || questionData.length === 0) {
       throw new Error('Invalid question data received');
     }
 
     const question = questionData[0];
-    const questionId = 'exampleQuestionId';  // Replace with actual dynamic question ID logic
+    const questionId = 'exampleQuestionId';  // You can replace this with your Firebase dynamic questionId logic
 
     if (!question.question) {
       throw new Error('Question text is missing');
@@ -32,6 +32,7 @@ export default async function handler(req) {
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question.question)}`;
     console.log('Generated OG Image URL:', ogImageUrl);
 
+    // Return HTML response with proper Farcaster metadata for buttons and images
     const html = `
       <!DOCTYPE html>
       <html>
@@ -50,7 +51,7 @@ export default async function handler(req) {
       </html>
     `;
 
-    console.log('Sending HTML response');
+    console.log('Sending HTML response with question and Farcaster metadata');
     return new NextResponse(
       JSON.stringify({
         html: html,
@@ -73,7 +74,7 @@ async function fetchQuestion() {
     method: 'GET',
     headers: {
       'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
+      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com',
     }
   };
 
@@ -95,11 +96,11 @@ async function fetchQuestion() {
   }
 }
 
-// Helper function to generate options
+// Helper function to generate options from question
 function generateOptions(question) {
-  const parts = question.split(" or ");
-  const option1 = parts[0].replace("Would you rather ", "").trim();
-  const option2 = parts[1].replace(/[?.!]$/, "").trim();
+  const parts = question.split(' or ');
+  const option1 = parts[0].replace('Would you rather ', '').trim();
+  const option2 = parts[1].replace(/[?.!]$/, '').trim();
 
   return [option1, option2];
 }
