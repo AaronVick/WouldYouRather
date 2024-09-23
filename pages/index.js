@@ -1,33 +1,39 @@
 import Head from 'next/head';
+import { useEffect } from 'react';
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof fc !== 'undefined') {
+      // Run this code only in the browser
+      fc.untrusted().then((userData) => {
+        const fid = userData.fid; // Capture FID from untrusted data
+        document.querySelectorAll(".voteButton").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            const selectedOption = event.target.dataset.option; // Get selected option (optionOne or optionTwo)
+
+            // Send POST request with FID and option
+            fetch('/api/updateVotes', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                questionId: 'question_id',  // Replace dynamically
+                fid: fid,  // Pass FID
+                option: selectedOption,  // Pass selected option (optionOne or optionTwo)
+              }),
+            });
+          });
+        });
+      });
+    }
+  }, []);
+
   const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/wouldrather.png`;
   const playUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/playWouldYouRather`;
 
   const shareText = encodeURIComponent('Play the Would You Rather game!\n\nFrame by @aaronv.eth');
   const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
-
-  fc.untrusted().then((userData) => {
-    const fid = userData.fid; // Capture FID from untrusted data
-    document.querySelectorAll(".voteButton").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        const selectedOption = event.target.dataset.option; // Get selected option
-
-        // Send POST request with FID and option
-        fetch('/api/updateVotes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            questionId: 'question_id',  // Replace dynamically
-            fid: fid,  // Pass FID
-            option: selectedOption,  // Pass selected option (optionOne or optionTwo)
-          }),
-        });
-      });
-    });
-  });
 
   return (
     <div>
