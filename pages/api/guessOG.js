@@ -29,8 +29,6 @@ export default async function handler(req) {
     }
 
     const questionData = questionDoc.data();
-    const optionOnePercent = (questionData.optionOneVotes / questionData.totalVotes) * 100;
-    const optionTwoPercent = (questionData.optionTwoVotes / questionData.totalVotes) * 100;
 
     return new ImageResponse(
       (
@@ -44,26 +42,19 @@ export default async function handler(req) {
             justifyContent: 'center',
             backgroundColor: '#1E1E1E',
             color: '#FFFFFF',
-            padding: '20px'
           }}
         >
           <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#FF5733', marginBottom: '20px' }}>
-            Would You Rather Poll Results
+            Would You Rather
           </div>
           <div style={{ fontSize: '32px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word' }}>
             {questionData.text}
           </div>
-          
-          {/* Option One */}
-          <div style={{ fontSize: '28px', marginTop: '20px', width: '100%', maxWidth: '800px' }}>
-            {questionData.optionOneText}: {optionOnePercent.toFixed(1)}%
-            <div style={{ backgroundColor: '#FF5733', height: '25px', width: `${optionOnePercent}%`, marginTop: '10px' }}></div>
+          <div style={{ fontSize: '28px', marginTop: '20px' }}>
+            1. {questionData.optionOneText}
           </div>
-
-          {/* Option Two */}
-          <div style={{ fontSize: '28px', marginTop: '20px', width: '100%', maxWidth: '800px' }}>
-            {questionData.optionTwoText}: {optionTwoPercent.toFixed(1)}%
-            <div style={{ backgroundColor: '#3498db', height: '25px', width: `${optionTwoPercent}%`, marginTop: '10px' }}></div>
+          <div style={{ fontSize: '28px', marginTop: '10px' }}>
+            2. {questionData.optionTwoText}
           </div>
         </div>
       ),
