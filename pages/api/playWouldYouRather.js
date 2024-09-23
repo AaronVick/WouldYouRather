@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og';
+import { NextResponse } from 'next/server';
 
 export const config = {
   runtime: 'edge',
@@ -7,9 +7,9 @@ export const config = {
 export default async function handler(req) {
   console.log('Received request method:', req.method);
 
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     console.log('Method not allowed:', req.method);
-    return new Response('Method Not Allowed', { status: 405 });
+    return new NextResponse('Method Not Allowed', { status: 405 });
   }
 
   try {
@@ -20,31 +20,37 @@ export default async function handler(req) {
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
     console.log('OG Image URL:', ogImageUrl);
 
+    const shareText = encodeURIComponent(`I'm playing Would You Rather! My question: ${question.data.question}\n\nPlay now:`);
+    const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
+
     const html = `
+      <!DOCTYPE html>
       <html>
         <head>
+          <title>Would You Rather</title>
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${ogImageUrl}" />
           <meta property="fc:frame:button:1" content="${question.data.optionOne}" />
           <meta property="fc:frame:button:2" content="${question.data.optionTwo}" />
+          <meta property="fc:frame:button:3" content="Share" />
+          <meta property="fc:frame:button:3:action" content="link" />
+          <meta property="fc:frame:button:3:target" content="${shareLink}" />
           <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${question.id}" />
         </head>
         <body>
           <h1>Would You Rather</h1>
           <p>${question.data.question}</p>
-          <button>${question.data.optionOne}</button>
-          <button>${question.data.optionTwo}</button>
         </body>
       </html>
     `;
 
     console.log('Sending HTML response');
-    return new Response(html, {
+    return new NextResponse(html, {
       headers: { 'Content-Type': 'text/html' },
     });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
