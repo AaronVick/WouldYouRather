@@ -27,7 +27,7 @@ export default async function handler(req) {
   }
 
   try {
-    const fid = req.headers.get('farcaster-fid'); // Assuming the fid comes from Farcaster headers.
+    const fid = req.headers.get('farcaster-fid'); // Fetch Farcaster FID from headers
     console.log('Farcaster fid:', fid);
 
     console.log('Fetching question...');
@@ -50,9 +50,9 @@ export default async function handler(req) {
     if (!querySnapshot.empty) {
       // Question exists, use the existing document ID
       questionId = querySnapshot.docs[0].id;
-      console.log('Question already exists in Firebase with ID:', questionId);
+      console.log('Question found in Firebase with ID:', questionId);
     } else {
-      // Question does not exist, so add it to Firebase
+      // Question does not exist, add it to Firebase
       const newQuestionRef = await addDoc(collection(db, 'Questions'), {
         questionText: questionText,
         optionOneVotes: 0,
@@ -101,19 +101,35 @@ async function fetchQuestion() {
     method: 'GET',
     headers: {
       'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
-    }
+      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com',
+    },
   };
 
-  console.log('Fetching question from API...');
-  const response = await fetch(url, options);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // Set a timeout of 5 seconds
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal, // Attach the signal to the fetch call
+    });
+
+    clearTimeout(timeoutId); // Clear the timeout once the fetch is complete
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('API call timed out');
+    } else {
+      console.error('Error fetching question:', error);
+    }
+    throw error;
   }
-
-  const result = await response.json();
-  return result;
 }
 
 // Split the question text into two options
