@@ -16,6 +16,9 @@ export default function Home() {
         <meta property="fc:frame" content="vNext" />
         <meta property="fc:frame:image" content={imageUrl} />
         <meta property="fc:frame:button:1" content="Play Game" />
+        <meta property="fc:frame:button:2" content="Share" />
+        <meta property="fc:frame:button:2:action" content="link" />
+        <meta property="fc:frame:button:2:target" content={shareLink} />
         <meta property="fc:frame:post_url" content={playUrl} />
       </Head>
       <main>

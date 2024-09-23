@@ -7,15 +7,19 @@ export const config = {
 export default async function handler(req) {
   console.log('Received request method:', req.method);
 
-  if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method);
-    return new NextResponse('Method Not Allowed', { status: 405 });
-  }
-
   try {
+    if (req.method !== 'POST') {
+      console.log('Method not allowed:', req.method);
+      return new NextResponse('Method Not Allowed', { status: 405 });
+    }
+
     console.log('Fetching question...');
     const question = await fetchQuestion();
-    console.log('Fetched question:', question);
+    console.log('Fetched question:', JSON.stringify(question));
+
+    if (!question || !question.data) {
+      throw new Error('Invalid question data received');
+    }
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
     console.log('OG Image URL:', ogImageUrl);
@@ -50,25 +54,30 @@ export default async function handler(req) {
     });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
   }
 }
 
 async function fetchQuestion() {
   console.log('Fetching question from API...');
-  const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
-    method: 'GET',
-    headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
+  try {
+    const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key': process.env.XRapidAPIKey,
+        'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    console.log('API response:', JSON.stringify(data));
+    return data;
+  } catch (error) {
+    console.error('Error fetching question:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('API response:', data);
-  return data;
 }
