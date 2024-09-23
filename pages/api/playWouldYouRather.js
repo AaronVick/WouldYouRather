@@ -1,55 +1,74 @@
 import { ImageResponse } from '@vercel/og';
 import https from 'https';
 
-export default async function handler(req, res) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const options = {
-    method: 'GET',
-    hostname: 'would-you-rather.p.rapidapi.com',
-    port: null,
-    path: '/wyr/random',
-    headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
-    }
-  };
+  try {
+    const question = await fetchQuestion();
+    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
 
-  const reqAPI = https.request(options, function (resAPI) {
-    const chunks = [];
+    const html = `
+      <html>
+        <head>
+          <meta property="fc:frame" content="vNext" />
+          <meta property="fc:frame:image" content="${ogImageUrl}" />
+          <meta property="fc:frame:button:1" content="${question.data.optionOne}" />
+          <meta property="fc:frame:button:2" content="${question.data.optionTwo}" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${question.id}" />
+        </head>
+      </html>
+    `;
 
-    resAPI.on('data', function (chunk) {
-      chunks.push(chunk);
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html' },
+    });
+  } catch (error) {
+    console.error('Error in playWouldYouRather:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+async function fetchQuestion() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      method: 'GET',
+      hostname: 'would-you-rather.p.rapidapi.com',
+      port: null,
+      path: '/wyr/random',
+      headers: {
+        'x-rapidapi-key': process.env.XRapidAPIKey,
+        'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const question = JSON.parse(data);
+          resolve(question);
+        } catch (error) {
+          reject(error);
+        }
+      });
     });
 
-    resAPI.on('end', function () {
-      const body = Buffer.concat(chunks).toString();
-      const question = JSON.parse(body);
-
-      const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${question.id}`;
-
-      // Respond with the Farcaster frame meta tags
-      res.setHeader('Content-Type', 'text/html');
-      res.status(200).send(`
-        <html>
-          <head>
-            <meta property="fc:frame" content="vNext" />
-            <meta property="fc:frame:image" content="${ogImageUrl}" />
-            <meta property="fc:frame:button:1" content="${question.data.optionOne}" />
-            <meta property="fc:frame:button:2" content="${question.data.optionTwo}" />
-            <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${question.id}" />
-          </head>
-        </html>
-      `);
+    req.on('error', (error) => {
+      reject(error);
     });
-  });
 
-  reqAPI.on('error', function (error) {
-    console.error('Error fetching question:', error);
-    res.status(500).json({ error: 'Error fetching question' });
+    req.end();
   });
-
-  reqAPI.end();
 }

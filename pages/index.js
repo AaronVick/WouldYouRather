@@ -1,14 +1,16 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 export default function Home() {
+  const router = useRouter();
+
   const playGame = () => {
-    window.location.href = '/api/playWouldYouRather'; // This will trigger a GET request
+    router.push('/api/playWouldYouRather');
   };
 
   const shareText = encodeURIComponent('Play the Would You Rather game!\n\nFrame by @aaronv.eth');
   const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
 
-  // Use the existing wouldrather.png image for the initial frame
   const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/wouldrather.png`;
 
   return (
