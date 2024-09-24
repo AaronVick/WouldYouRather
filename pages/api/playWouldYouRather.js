@@ -110,10 +110,3 @@ function extractOptionsFromQuestion(question) {
     return option.trim().replace(/[?.,!]$/, '');
   });
 }
-
-async function storeQuestionInFirebase(questionId, question, option1, option2) {
-  // This function should be implemented in a separate file that uses the nodejs runtime
-  // and then imported and used here. For now, we'll leave it as a placeholder.
-  console.log('Storing question in Firebase:', questionId, question, option1, option2);
-  // Implement the actual Firebase storage logic in a separate file
-}
