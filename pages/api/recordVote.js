@@ -12,9 +12,13 @@ export default async function handler(req, res) {
   try {
     const { fid, questionId, response } = req.body;
 
+    if (!fid || !questionId || !response) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
     // Record the vote in Firebase
-    await db.collection('UserResponses').doc(fid).set({
-      [`${questionId}`]: response
+    await db.collection('UserResponses').doc(fid.toString()).set({
+      [questionId]: response
     }, { merge: true });
 
     // Update question votes

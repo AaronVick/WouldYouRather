@@ -1,68 +1,64 @@
+import { db } from '../../lib/firebase';
+
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs'
 };
 
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    const { fid, questionId, response } = await req.json();
+    const { fid, questionId, option } = req.body;
 
-    // Call the recordVote API to handle Firebase operations
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recordVote`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ fid, questionId, response }),
+    if (!fid || !questionId || !option) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    // Record the vote in Firebase
+    await db.collection('UserResponses').doc(fid).set({
+      [questionId]: option
+    }, { merge: true });
+
+    // Update question votes
+    const questionRef = db.collection('Questions').doc(questionId);
+    await questionRef.update({
+      [`${option}Votes`]: db.FieldValue.increment(1),
+      totalVotes: db.FieldValue.increment(1)
     });
 
-    // Fetch a new question for the next frame
-    const newQuestion = await fetchNewQuestion();
+    // Fetch updated question data
+    const updatedQuestion = await questionRef.get();
+    const questionData = updatedQuestion.data();
 
-    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(newQuestion)}`;
+    // Calculate percentages
+    const totalVotes = questionData.totalVotes;
+    const option1Percent = (questionData.option1Votes / totalVotes) * 100;
+    const option2Percent = (questionData.option2Votes / totalVotes) * 100;
 
-    const html = `
+    // Generate the review HTML
+    const reviewHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${ogImageUrl}" />
-          <meta property="fc:frame:button:1" content="Option 1" />
-          <meta property="fc:frame:button:2" content="Option 2" />
-          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
+          <meta property="fc:frame:image" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/resultOG?questionId=${questionId}" />
+          <meta property="fc:frame:button:1" content="Play Again" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/playWouldYouRather" />
         </head>
         <body>
-          <h1>Would You Rather</h1>
-          <p>${newQuestion}</p>
+          <h1>Results</h1>
+          <p>${questionData.question}</p>
+          <p>${questionData.option1}: ${option1Percent.toFixed(1)}%</p>
+          <p>${questionData.option2}: ${option2Percent.toFixed(1)}%</p>
         </body>
       </html>
     `;
 
-    return new Response(html, {
-      headers: { 'Content-Type': 'text/html' },
-    });
+    res.status(200).send(reviewHtml);
   } catch (error) {
     console.error('Error in updateVotes:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-}
-
-async function fetchNewQuestion() {
-  const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
-    method: 'GET',
-    headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data[0].question;
 }
