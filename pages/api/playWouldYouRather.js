@@ -1,5 +1,3 @@
-import { storeQuestionInFirebase } from '../../lib/storeQuestion';
-
 export const config = {
   runtime: 'edge',
 };
@@ -26,6 +24,15 @@ export default async function handler(req) {
     // Generate a unique questionId
     const questionId = Date.now().toString();
 
+    // Store the question using a separate API route
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/storeQuestion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ questionId, question, option1, option2 }),
+    });
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -42,9 +49,6 @@ export default async function handler(req) {
         </body>
       </html>
     `;
-
-    // Store the question in Firebase
-    await storeQuestionInFirebase(questionId, question, option1, option2);
 
     return new Response(html, {
       headers: { 'Content-Type': 'text/html' },
