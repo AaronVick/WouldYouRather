@@ -22,19 +22,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "functions": {
-    "pages/api/guessOG.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    },
-    "pages/api/playWouldYouRather.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    },
-    "pages/api/updateVotes.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
+  ]
 }

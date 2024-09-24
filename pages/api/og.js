@@ -1,18 +1,4 @@
 import { ImageResponse } from '@vercel/og';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 export const config = {
   runtime: 'edge',
@@ -23,12 +9,13 @@ export default async function handler(req) {
     const { searchParams } = new URL(req.url);
     const questionId = searchParams.get('questionId');
 
-    const questionDoc = await getDoc(doc(db, 'Questions', questionId));
-    if (!questionDoc.exists()) {
-      throw new Error('Question not found');
+    // Fetch question data from a new API route
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getQuestionData?questionId=${questionId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch question data');
     }
+    const questionData = await response.json();
 
-    const questionData = questionDoc.data();
     const optionOnePercent = (questionData.optionOneVotes / questionData.totalVotes) * 100;
     const optionTwoPercent = (questionData.optionTwoVotes / questionData.totalVotes) * 100;
 

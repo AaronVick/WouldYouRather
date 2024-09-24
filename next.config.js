@@ -1,5 +1,8 @@
 module.exports = {
   reactStrictMode: true,
+  experimental: {
+    runtime: 'nodejs',
+  },
   async headers() {
     return [
       {
