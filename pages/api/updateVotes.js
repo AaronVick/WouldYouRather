@@ -44,8 +44,7 @@ export default async function handler(req, res) {
       totalVotes: FieldValue.increment(1)
     });
 
-    // Now that we've ensured the question exists and updated its votes,
-    // we can record the user's vote
+    // Record the user's vote
     await db.collection('UserResponses').doc(fid.toString()).set({
       [questionId]: selectedOption
     }, { merge: true });
