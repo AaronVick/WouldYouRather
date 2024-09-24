@@ -67,19 +67,38 @@ async function fetchNewQuestion() {
   const data = await response.json();
   console.log('API Response:', data);
 
-  if (!Array.isArray(data) || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0 || !data[0].question) {
     throw new Error('Invalid response from API');
   }
 
   const questionData = data[0];
-  
-  if (!questionData.question || !questionData.option_1 || !questionData.option_2) {
-    throw new Error('Missing question or options in API response');
-  }
+  const question = questionData.question;
+
+  // Extract options from the question
+  const options = extractOptionsFromQuestion(question);
 
   return {
-    question: questionData.question,
-    option1: questionData.option_1,
-    option2: questionData.option_2
+    question,
+    option1: options[0],
+    option2: options[1]
   };
+}
+
+function extractOptionsFromQuestion(question) {
+  // Remove "Would you rather " from the beginning of the question
+  const cleanedQuestion = question.replace(/^Would you rather /i, '');
+
+  // Split the question into two options
+  const options = cleanedQuestion.split(' or ');
+
+  // If we couldn't split into two options, use generic options
+  if (options.length !== 2) {
+    return ['Option A', 'Option B'];
+  }
+
+  // Clean up the options
+  return options.map(option => {
+    // Remove any leading/trailing whitespace and punctuation
+    return option.trim().replace(/[?.,!]$/, '');
+  });
 }
