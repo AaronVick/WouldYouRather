@@ -17,6 +17,9 @@ export default async function handler(req) {
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question)}`;
 
     console.log('Generated OG Image URL:', ogImageUrl);
+    console.log('Question:', question);
+    console.log('Option 1:', option1);
+    console.log('Option 2:', option2);
 
     const html = `
       <!DOCTYPE html>
@@ -62,8 +65,18 @@ async function fetchNewQuestion() {
   }
 
   const data = await response.json();
+  console.log('API Response:', data);
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('Invalid response from API');
+  }
+
   const questionData = data[0];
   
+  if (!questionData.question || !questionData.option_1 || !questionData.option_2) {
+    throw new Error('Missing question or options in API response');
+  }
+
   return {
     question: questionData.question,
     option1: questionData.option_1,

@@ -20,19 +20,21 @@ export default function handler(req) {
       (
         <div
           style={{
-            fontSize: 40,
-            color: 'black',
-            background: 'white',
-            width: '100%',
             height: '100%',
-            padding: '50px 200px',
-            textAlign: 'center',
-            justifyContent: 'center',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'white',
           }}
         >
-          <h1>Would You Rather</h1>
-          <p>{question}</p>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '20px' }}>
+            Would You Rather
+          </div>
+          <div style={{ fontSize: '36px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word' }}>
+            {question}
+          </div>
         </div>
       ),
       {
