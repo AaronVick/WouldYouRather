@@ -1,19 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from '../../firebaseAdmin';  // Use Firebase Admin
 
 export const config = {
   runtime: 'edge',
@@ -27,7 +13,7 @@ export default async function handler(req) {
   }
 
   try {
-    const fid = req.headers.get('farcaster-fid'); // Fetch Farcaster FID from headers
+    const fid = req.headers.get('farcaster-fid') || 'unknown-fid'; // Fallback if FID is null
     console.log('Farcaster fid:', fid);
 
     console.log('Fetching question...');
@@ -46,17 +32,18 @@ export default async function handler(req) {
 
     // Check if the question already exists in Firebase
     let questionId;
-    const questionsRef = collection(db, 'Questions');
-    const q = query(questionsRef, where('sanitizedQuestionId', '==', sanitizedQuestionId));
-    const querySnapshot = await getDocs(q);
+    const questionsRef = db.collection('Questions');
+    const existingQuestion = await questionsRef
+      .where('sanitizedQuestionId', '==', sanitizedQuestionId)
+      .get();
 
-    if (!querySnapshot.empty) {
+    if (!existingQuestion.empty) {
       // Question exists, use the existing document ID
-      questionId = querySnapshot.docs[0].id;
+      questionId = existingQuestion.docs[0].id;
       console.log('Question found in Firebase with ID:', questionId);
     } else {
       // Question does not exist, add it to Firebase
-      const newQuestionRef = await addDoc(collection(db, 'Questions'), {
+      const newQuestionRef = await questionsRef.add({
         sanitizedQuestionId: sanitizedQuestionId,
         questionText: questionText,
         optionOneVotes: 0,
@@ -66,7 +53,9 @@ export default async function handler(req) {
       console.log('Added new question to Firebase with ID:', questionId);
     }
 
-    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(questionText)}`;
+    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(
+      questionText
+    )}`;
     console.log('Generated OG Image URL:', ogImageUrl);
 
     // Return HTML with Farcaster frame metadata
