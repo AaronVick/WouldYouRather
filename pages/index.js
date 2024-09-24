@@ -2,31 +2,27 @@ import Head from 'next/head';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const [questionId, setQuestionId] = useState(null);  // State to store questionId
+  const [questionId, setQuestionId] = useState(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof fc !== 'undefined') {
-      // Fetch untrusted data (FID) from Farcaster frame
       fc.untrusted().then((userData) => {
-        const fid = userData.fid;  // Capture the FID from untrusted data
+        const fid = userData.fid;
 
-        // Add event listeners to the voting buttons
         document.querySelectorAll(".voteButton").forEach((button) => {
           button.addEventListener("click", (event) => {
-            const selectedOption = event.target.dataset.option;  // Get selected option (optionOne or optionTwo)
+            const selectedOption = event.target.dataset.option;
 
-            // Ensure we have the questionId and fid before sending the request
             if (questionId && fid) {
-              // Send POST request with FID, questionId, and selected option
               fetch('/api/updateVotes', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  questionId: questionId,  // Dynamically assigned questionId from Firebase
-                  fid: fid,  // Farcaster FID
-                  option: selectedOption,  // The selected option (optionOne or optionTwo)
+                  questionId: questionId,
+                  fid: fid,
+                  option: selectedOption,
                 }),
               });
             } else {
@@ -36,20 +32,18 @@ export default function Home() {
         });
       });
     }
-  }, [questionId]);  // Ensure this runs only when questionId is set
+  }, [questionId]);
 
-  // Simulate fetching a questionId after the question is displayed (from Firebase)
   const displayQuestion = async () => {
-    // Fetch the question and questionId from Firebase
     const response = await fetch('/api/playWouldYouRather', {
       method: 'POST',
     });
     const data = await response.json();
-    setQuestionId(data.questionId);  // Set the dynamic questionId in state
+    setQuestionId(data.questionId);
   };
 
   useEffect(() => {
-    displayQuestion();  // Fetch question on page load
+    displayQuestion();
   }, []);
 
   const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/wouldrather.png`;
@@ -57,6 +51,8 @@ export default function Home() {
   
   const shareText = encodeURIComponent('Play the Would You Rather game!\n\nFrame by @aaronv.eth');
   const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
+
+  console.log('Image URL:', imageUrl); // Added for debugging
 
   return (
     <div>

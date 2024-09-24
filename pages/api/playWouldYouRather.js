@@ -9,7 +9,15 @@ export default async function handler(req) {
 
   try {
     const question = await fetchNewQuestion();
+    
+    // Ensure NEXT_PUBLIC_BASE_URL is set
+    if (!process.env.NEXT_PUBLIC_BASE_URL) {
+      throw new Error('NEXT_PUBLIC_BASE_URL is not set');
+    }
+
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question)}`;
+
+    console.log('Generated OG Image URL:', ogImageUrl); // Log the URL for debugging
 
     const html = `
       <!DOCTYPE html>
@@ -33,11 +41,15 @@ export default async function handler(req) {
     });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response(`Error: ${error.message}`, { status: 500 });
   }
 }
 
 async function fetchNewQuestion() {
+  if (!process.env.XRapidAPIKey) {
+    throw new Error('XRapidAPIKey is not set');
+  }
+
   const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
     method: 'GET',
     headers: {
