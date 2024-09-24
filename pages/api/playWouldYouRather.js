@@ -1,3 +1,5 @@
+import { storeQuestionInFirebase } from '../../lib/storeQuestion';
+
 export const config = {
   runtime: 'edge',
 };
@@ -21,6 +23,9 @@ export default async function handler(req) {
     console.log('Option 1:', option1);
     console.log('Option 2:', option2);
 
+    // Generate a unique questionId
+    const questionId = Date.now().toString();
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -29,7 +34,7 @@ export default async function handler(req) {
           <meta property="fc:frame:image" content="${ogImageUrl}" />
           <meta property="fc:frame:button:1" content="${option1}" />
           <meta property="fc:frame:button:2" content="${option2}" />
-          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes?questionId=${questionId}&option1=${encodeURIComponent(option1)}&option2=${encodeURIComponent(option2)}" />
         </head>
         <body>
           <h1>Would You Rather</h1>
@@ -37,6 +42,9 @@ export default async function handler(req) {
         </body>
       </html>
     `;
+
+    // Store the question in Firebase
+    await storeQuestionInFirebase(questionId, question, option1, option2);
 
     return new Response(html, {
       headers: { 'Content-Type': 'text/html' },
@@ -101,4 +109,11 @@ function extractOptionsFromQuestion(question) {
     // Remove any leading/trailing whitespace and punctuation
     return option.trim().replace(/[?.,!]$/, '');
   });
+}
+
+async function storeQuestionInFirebase(questionId, question, option1, option2) {
+  // This function should be implemented in a separate file that uses the nodejs runtime
+  // and then imported and used here. For now, we'll leave it as a placeholder.
+  console.log('Storing question in Firebase:', questionId, question, option1, option2);
+  // Implement the actual Firebase storage logic in a separate file
 }

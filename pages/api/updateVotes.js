@@ -10,21 +10,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { fid, questionId, option } = req.body;
+    const { questionId, option1, option2 } = req.query;
+    const { untrustedData } = req.body;
+    const fid = untrustedData?.fid;
+    const buttonIndex = untrustedData?.buttonIndex;
 
-    if (!fid || !questionId || !option) {
+    if (!fid || !questionId || !option1 || !option2 || !buttonIndex) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
+    const selectedOption = buttonIndex === 1 ? 'option1' : 'option2';
+
     // Record the vote in Firebase
-    await db.collection('UserResponses').doc(fid).set({
-      [questionId]: option
+    await db.collection('UserResponses').doc(fid.toString()).set({
+      [questionId]: selectedOption
     }, { merge: true });
 
     // Update question votes
     const questionRef = db.collection('Questions').doc(questionId);
     await questionRef.update({
-      [`${option}Votes`]: db.FieldValue.increment(1),
+      [`${selectedOption}Votes`]: db.FieldValue.increment(1),
       totalVotes: db.FieldValue.increment(1)
     });
 
@@ -50,8 +55,8 @@ export default async function handler(req, res) {
         <body>
           <h1>Results</h1>
           <p>${questionData.question}</p>
-          <p>${questionData.option1}: ${option1Percent.toFixed(1)}%</p>
-          <p>${questionData.option2}: ${option2Percent.toFixed(1)}%</p>
+          <p>${option1}: ${option1Percent.toFixed(1)}%</p>
+          <p>${option2}: ${option2Percent.toFixed(1)}%</p>
         </body>
       </html>
     `;
