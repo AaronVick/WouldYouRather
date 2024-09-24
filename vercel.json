@@ -1,28 +1,40 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/next"
+  "version": 2,
+  "builds": [
+    {
+      "src": "pages/api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "pages/**/*.js",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1",
+      "headers": {
+        "cache-control": "no-store"
       }
-    ],
-    "routes": [
-      {
-        "src": "/api/plotFrame",
-        "dest": "/api/plotFrame"
-      },
-      {
-        "src": "/api/og",
-        "dest": "/api/og"
-      },
-      {
-        "src": "/api/answer",
-        "dest": "/api/answer"
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/$1"
-      }
-    ]
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "functions": {
+    "pages/api/guessOG.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "pages/api/playWouldYouRather.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "pages/api/updateVotes.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
   }
-  
+}

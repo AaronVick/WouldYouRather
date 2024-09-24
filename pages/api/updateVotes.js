@@ -1,37 +1,29 @@
 import { db } from './firebaseAdmin';
-
-export const config = {
-  runtime: 'edge',
-};
+import { doc, updateDoc, increment, collection, addDoc } from 'firebase/firestore';
 
 export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+  const { questionId, fid, option } = await req.json();
 
   try {
-    const { questionId, option } = await req.json();
+    const questionRef = doc(db, 'Questions', questionId);
+    const voteField = option === 'optionOne' ? 'optionOneVotes' : 'optionTwoVotes';
 
-    const questionRef = db.collection('Questions').doc(questionId);
-    const questionDoc = await questionRef.get();
+    // Update vote count
+    await updateDoc(questionRef, {
+      [voteField]: increment(1),
+      totalVotes: increment(1),
+    });
 
-    if (!questionDoc.exists) {
-      throw new Error('Question not found');
-    }
+    // Log user response
+    await addDoc(collection(db, 'UserResponses'), {
+      fid,
+      questionID: questionId,
+      response: option,
+    });
 
-    const questionData = questionDoc.data();
-
-    if (option === 'optionOne') {
-      questionData.optionOneVotes += 1;
-    } else if (option === 'optionTwo') {
-      questionData.optionTwoVotes += 1;
-    }
-
-    questionData.totalVotes += 1;
-    await questionRef.set(questionData);
-
-    return new Response('Vote recorded successfully', { status: 200 });
+    return new Response(JSON.stringify({ message: 'Vote recorded successfully' }), { status: 200 });
   } catch (error) {
-    return new Response(`Error processing vote: ${error.message}`, { status: 500 });
+    console.error('Error updating votes:', error);
+    return new Response('Error recording vote', { status: 500 });
   }
 }

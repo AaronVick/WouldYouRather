@@ -1,55 +1,30 @@
 import { ImageResponse } from '@vercel/og';
+import { db } from './firebaseAdmin';
+import { getDoc, doc } from 'firebase/firestore';
 
 export const config = {
   runtime: 'edge',
 };
 
 export default async function handler(req) {
-  console.log('guessOG handler called');
   try {
     const { searchParams } = new URL(req.url);
-    const question = searchParams.get('question');
+    const questionId = searchParams.get('questionId');
 
-    console.log('Received question for image generation:', question);
+    const questionDoc = await getDoc(doc(db, 'Questions', questionId));
+    if (!questionDoc.exists()) throw new Error('Question not found');
 
-    if (!question) {
-      throw new Error('Question not provided');
-    }
+    const questionData = questionDoc.data();
+    const optionOnePercent = (questionData.optionOneVotes / questionData.totalVotes) * 100;
+    const optionTwoPercent = (questionData.optionTwoVotes / questionData.totalVotes) * 100;
 
-    // Generate two options from the question
-    const options = generateOptions(question);
-
-    console.log('Generated options:', options);
-
-    const image = new ImageResponse(
+    return new ImageResponse(
       (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#1E1E1E',
-            color: '#FFFFFF',
-            padding: '40px',
-          }}
-        >
-          <div style={{ display: 'flex', fontSize: '72px', fontWeight: 'bold', color: '#4A90E2', marginBottom: '40px', textAlign: 'center' }}>
-            Would You Rather
-          </div>
-          <div style={{ display: 'flex', fontSize: '44px', textAlign: 'center', maxWidth: '90%', wordWrap: 'break-word', marginBottom: '40px' }}>
-            {question}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '20px' }}>
-            <div style={{ display: 'flex', fontSize: '36px', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
-              1. {options[0]}
-            </div>
-            <div style={{ display: 'flex', fontSize: '36px', textAlign: 'center', width: '100%', justifyContent: 'center' }}>
-              2. {options[1]}
-            </div>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#fff', padding: '40px', fontSize: '24px' }}>
+          <h1>Would You Rather?</h1>
+          <p>{questionData.text}</p>
+          <div>{questionData.optionOneText}: {optionOnePercent.toFixed(1)}%</div>
+          <div>{questionData.optionTwoText}: {optionTwoPercent.toFixed(1)}%</div>
         </div>
       ),
       {
@@ -57,27 +32,8 @@ export default async function handler(req) {
         height: 630,
       }
     );
-
-    console.log('Image generated successfully');
-    return image;
   } catch (error) {
-    console.error('Error generating image:', error);
-    return new Response(`Error generating image: ${error.message}`, {
-      status: 500,
-      headers: { 'Content-Type': 'text/plain' },
-    });
+    console.error('Error generating OG image:', error);
+    return new Response('Error generating image', { status: 500 });
   }
-}
-
-function generateOptions(question) {
-  // Split the question at "or"
-  const parts = question.split(" or ");
-  
-  // Remove "Would you rather " from the first part
-  const option1 = parts[0].replace("Would you rather ", "").trim();
-  
-  // Remove any trailing punctuation from the second part
-  const option2 = parts[1].replace(/[?.!]$/, "").trim();
-  
-  return [option1, option2];
 }
