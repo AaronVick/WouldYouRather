@@ -1,29 +1,37 @@
 import { db } from './firebaseAdmin';
-import { doc, updateDoc, increment, collection, addDoc } from 'firebase/firestore';
 
-export default async function handler(req) {
-  const { questionId, fid, option } = await req.json();
+export default async function handler(req, res) {
+  const { fid, questionId, response } = req.body;
 
   try {
-    const questionRef = doc(db, 'Questions', questionId);
-    const voteField = option === 'optionOne' ? 'optionOneVotes' : 'optionTwoVotes';
+    const questionRef = db.collection('Questions').doc(questionId);
+    const questionSnap = await questionRef.get();
 
-    // Update vote count
-    await updateDoc(questionRef, {
-      [voteField]: increment(1),
-      totalVotes: increment(1),
-    });
+    if (!questionSnap.exists) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
 
     // Log user response
-    await addDoc(collection(db, 'UserResponses'), {
-      fid,
-      questionID: questionId,
-      response: option,
+    const responseRef = db.collection('UserResponses').doc(fid);
+    await responseRef.set(
+      {
+        responses: admin.firestore.FieldValue.arrayUnion({
+          questionId,
+          response,
+        }),
+      },
+      { merge: true }
+    );
+
+    // Update vote counts
+    const voteField = response === 'OptionOne' ? 'optionOneVotes' : 'optionTwoVotes';
+    await questionRef.update({
+      [voteField]: admin.firestore.FieldValue.increment(1),
     });
 
-    return new Response(JSON.stringify({ message: 'Vote recorded successfully' }), { status: 200 });
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error updating votes:', error);
-    return new Response('Error recording vote', { status: 500 });
+    console.error('Error in updateVotes:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }

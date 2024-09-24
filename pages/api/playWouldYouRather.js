@@ -1,104 +1,36 @@
-import { NextResponse } from 'next/server';
 import { db } from './firebaseAdmin';
-import { collection, doc, setDoc, getDocs, addDoc, query, where } from 'firebase/firestore';
 
-export const config = {
-  runtime: 'edge',
-};
+export default async function handler(req, res) {
+  const { fid } = req.body;
 
-async function fetchQuestionFromAPI() {
-  const url = 'https://would-you-rather.p.rapidapi.com/wyr/random';
-  const options = {
-    method: 'GET',
-    headers: {
-      'x-rapidapi-key': process.env.XRapidAPIKey,
-      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
-    }
-  };
-
-  const response = await fetch(url, options);
-  if (!response.ok) throw new Error(`Error fetching from API: ${response.status}`);
-  const question = await response.json();
-  return question[0];  // Assuming the API returns an array
-}
-
-export default async function handler(req) {
   try {
-    const { fid } = req.headers;
-    if (!fid) throw new Error('Farcaster FID is required.');
+    // Fetch questions from Firebase
+    const questionsRef = db.collection('Questions');
+    let questionSnap;
 
-    let questionDoc;
-    let questionData;
+    // Check if the user has answered before
+    const userResponseRef = db.collection('UserResponses').doc(fid);
+    const userResponseSnap = await userResponseRef.get();
 
-    // Check if the user has already answered any question
-    const userResponsesRef = collection(db, 'UserResponses');
-    const userQuery = query(userResponsesRef, where('FID', '==', fid));
-    const userSnapshot = await getDocs(userQuery);
-
-    if (userSnapshot.empty) {
-      // No responses from this user, fetch a new question from API
-      questionData = await fetchQuestionFromAPI();
+    if (userResponseSnap.exists) {
+      const answeredQuestions = userResponseSnap.data().responses.map((r) => r.questionId);
+      questionSnap = await questionsRef
+        .where(admin.firestore.FieldPath.documentId(), 'not-in', answeredQuestions)
+        .limit(1)
+        .get();
     } else {
-      // Get all questions that user hasn't answered
-      const questionsRef = collection(db, 'Questions');
-      const questionQuery = query(questionsRef);
-      const questionSnapshot = await getDocs(questionQuery);
-
-      questionSnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.usersAnswered.includes(fid)) {
-          questionDoc = doc;
-          questionData = doc.data();
-        }
-      });
-
-      if (!questionDoc) {
-        questionData = await fetchQuestionFromAPI();
-      }
+      questionSnap = await questionsRef.limit(1).get();
     }
 
-    // If it's a new question from the API, store it in Firebase
-    if (!questionDoc) {
-      const newQuestionRef = await addDoc(collection(db, 'Questions'), {
-        text: questionData.question,
-        optionOneText: questionData.optionOneText,
-        optionTwoText: questionData.optionTwoText,
-        optionOneVotes: 0,
-        optionTwoVotes: 0,
-        usersAnswered: [],
-      });
-      questionData.id = newQuestionRef.id;
-    } else {
-      questionData.id = questionDoc.id;
+    if (questionSnap.empty) {
+      return res.status(404).json({ error: 'No questions available' });
     }
 
-    // Generate OG image URL
-    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?questionId=${questionData.id}`;
+    const questionData = questionSnap.docs[0].data();
 
-    // HTML response
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Would You Rather</title>
-          <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${ogImageUrl}" />
-          <meta property="fc:frame:button:1" content="${questionData.optionOneText}" />
-          <meta property="fc:frame:button:2" content="${questionData.optionTwoText}" />
-          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
-        </head>
-        <body>
-          <h1>Would You Rather</h1>
-          <p>${questionData.text}</p>
-        </body>
-      </html>
-    `;
-
-    return new NextResponse(html, {
-      headers: { 'Content-Type': 'text/html' },
-    });
+    res.status(200).json({ question: questionData.questionText });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
-    return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
