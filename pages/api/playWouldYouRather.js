@@ -8,16 +8,15 @@ export default async function handler(req) {
   }
 
   try {
-    const question = await fetchNewQuestion();
+    const { question, option1, option2 } = await fetchNewQuestion();
     
-    // Ensure NEXT_PUBLIC_BASE_URL is set
     if (!process.env.NEXT_PUBLIC_BASE_URL) {
       throw new Error('NEXT_PUBLIC_BASE_URL is not set');
     }
 
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question)}`;
 
-    console.log('Generated OG Image URL:', ogImageUrl); // Log the URL for debugging
+    console.log('Generated OG Image URL:', ogImageUrl);
 
     const html = `
       <!DOCTYPE html>
@@ -25,8 +24,8 @@ export default async function handler(req) {
         <head>
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${ogImageUrl}" />
-          <meta property="fc:frame:button:1" content="Option 1" />
-          <meta property="fc:frame:button:2" content="Option 2" />
+          <meta property="fc:frame:button:1" content="${option1}" />
+          <meta property="fc:frame:button:2" content="${option2}" />
           <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
         </head>
         <body>
@@ -63,5 +62,11 @@ async function fetchNewQuestion() {
   }
 
   const data = await response.json();
-  return data[0].question;
+  const questionData = data[0];
+  
+  return {
+    question: questionData.question,
+    option1: questionData.option_1,
+    option2: questionData.option_2
+  };
 }
