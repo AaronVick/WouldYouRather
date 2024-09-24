@@ -1,8 +1,5 @@
 module.exports = {
   reactStrictMode: true,
-  experimental: {
-    runtime: 'nodejs',
-  },
   async headers() {
     return [
       {
@@ -15,5 +12,13 @@ module.exports = {
         ]
       }
     ];
-  }
+  },
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    NODE_ENV: process.env.NODE_ENV,
+  },
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+  },
 }

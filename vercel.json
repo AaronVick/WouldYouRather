@@ -1,15 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "pages/api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "pages/**/*.js",
-      "use": "@vercel/next"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -17,10 +7,6 @@
       "headers": {
         "cache-control": "no-store"
       }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
     }
   ]
 }
