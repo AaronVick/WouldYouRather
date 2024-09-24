@@ -8,11 +8,7 @@ export default async function handler(req) {
   }
 
   try {
-    const { fid } = await req.json();
-
-    // Fetch a new question from the API
     const question = await fetchNewQuestion();
-
     const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question)}`;
 
     const html = `

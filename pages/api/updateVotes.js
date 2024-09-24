@@ -8,10 +8,16 @@ export default async function handler(req) {
   }
 
   try {
-    const { fid, response } = await req.json();
+    const { fid, questionId, response } = await req.json();
 
-    // Log the vote (you can implement a separate serverless function to handle Firebase operations)
-    console.log(`User ${fid} voted: ${response}`);
+    // Call the recordVote API to handle Firebase operations
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recordVote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fid, questionId, response }),
+    });
 
     // Fetch a new question for the next frame
     const newQuestion = await fetchNewQuestion();
