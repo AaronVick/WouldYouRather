@@ -46,13 +46,15 @@ export default function Home() {
     displayQuestion();
   }, []);
 
-  const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/wouldrather.png`;
-  const playUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/playWouldYouRather`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://would-you-rather-gamma.vercel.app';
+  const imageUrl = `${baseUrl}/wouldrather.png`;
+  const playUrl = `${baseUrl}/api/playWouldYouRather`;
   
   const shareText = encodeURIComponent('Play the Would You Rather game!\n\nFrame by @aaronv.eth');
-  const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(process.env.NEXT_PUBLIC_BASE_URL)}`;
+  const shareLink = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${encodeURIComponent(baseUrl)}`;
 
-  console.log('Image URL:', imageUrl); // Added for debugging
+  console.log('Base URL:', baseUrl);
+  console.log('Image URL:', imageUrl);
 
   return (
     <div>
