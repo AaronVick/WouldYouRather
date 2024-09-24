@@ -1,36 +1,59 @@
-import { db } from './firebaseAdmin';
+export const config = {
+  runtime: 'edge',
+};
 
-export default async function handler(req, res) {
-  const { fid } = req.body;
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
 
   try {
-    // Fetch questions from Firebase
-    const questionsRef = db.collection('Questions');
-    let questionSnap;
+    const { fid } = await req.json();
 
-    // Check if the user has answered before
-    const userResponseRef = db.collection('UserResponses').doc(fid);
-    const userResponseSnap = await userResponseRef.get();
+    // Fetch a new question from the API
+    const question = await fetchNewQuestion();
 
-    if (userResponseSnap.exists) {
-      const answeredQuestions = userResponseSnap.data().responses.map((r) => r.questionId);
-      questionSnap = await questionsRef
-        .where(admin.firestore.FieldPath.documentId(), 'not-in', answeredQuestions)
-        .limit(1)
-        .get();
-    } else {
-      questionSnap = await questionsRef.limit(1).get();
-    }
+    const ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/guessOG?question=${encodeURIComponent(question)}`;
 
-    if (questionSnap.empty) {
-      return res.status(404).json({ error: 'No questions available' });
-    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta property="fc:frame" content="vNext" />
+          <meta property="fc:frame:image" content="${ogImageUrl}" />
+          <meta property="fc:frame:button:1" content="Option 1" />
+          <meta property="fc:frame:button:2" content="Option 2" />
+          <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/updateVotes" />
+        </head>
+        <body>
+          <h1>Would You Rather</h1>
+          <p>${question}</p>
+        </body>
+      </html>
+    `;
 
-    const questionData = questionSnap.docs[0].data();
-
-    res.status(200).json({ question: questionData.questionText });
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html' },
+    });
   } catch (error) {
     console.error('Error in playWouldYouRather:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return new Response('Internal Server Error', { status: 500 });
   }
+}
+
+async function fetchNewQuestion() {
+  const response = await fetch('https://would-you-rather.p.rapidapi.com/wyr/random', {
+    method: 'GET',
+    headers: {
+      'x-rapidapi-key': process.env.XRapidAPIKey,
+      'x-rapidapi-host': 'would-you-rather.p.rapidapi.com'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data[0].question;
 }
