@@ -38,13 +38,16 @@ export default async function handler(req) {
       throw new Error('Question text is missing');
     }
 
+    // Sanitize the question ID (remove special characters)
+    const sanitizedQuestionId = sanitizeQuestionId(questionText);
+
     // Generate two random options from the question text
     const options = generateOptions(questionText);
 
     // Check if the question already exists in Firebase
     let questionId;
     const questionsRef = collection(db, 'Questions');
-    const q = query(questionsRef, where('questionText', '==', questionText));
+    const q = query(questionsRef, where('sanitizedQuestionId', '==', sanitizedQuestionId));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
@@ -54,6 +57,7 @@ export default async function handler(req) {
     } else {
       // Question does not exist, add it to Firebase
       const newQuestionRef = await addDoc(collection(db, 'Questions'), {
+        sanitizedQuestionId: sanitizedQuestionId,
         questionText: questionText,
         optionOneVotes: 0,
         optionTwoVotes: 0,
@@ -130,6 +134,11 @@ async function fetchQuestion() {
     }
     throw error;
   }
+}
+
+// Helper function to sanitize question ID for Firestore
+function sanitizeQuestionId(question) {
+  return question.replace(/[^\w\s]/gi, '').replace(/\s+/g, '-').toLowerCase();
 }
 
 // Split the question text into two options
