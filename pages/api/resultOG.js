@@ -70,9 +70,16 @@ export default async function handler(req, res) {
       height: 630,
     });
 
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-    res.status(200).send(imageResponse);
+    
+    // Send the response
+    imageResponse.body.pipe(res);
     console.log('Image response sent successfully');
 
   } catch (error) {
