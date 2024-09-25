@@ -10,12 +10,12 @@ export default async function handler(req, res) {
     const { questionId } = req.query;
 
     if (!questionId) {
-      return new Response('Missing questionId parameter', { status: 400 });
+      return res.status(400).json({ error: 'Missing questionId parameter' });
     }
 
     const questionDoc = await db.collection('Questions').doc(questionId).get();
     if (!questionDoc.exists) {
-      return new Response('Question not found', { status: 404 });
+      return res.status(404).json({ error: 'Question not found' });
     }
 
     const questionData = questionDoc.data();
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     });
 
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.status(200).send(imageResponse);
 
   } catch (error) {

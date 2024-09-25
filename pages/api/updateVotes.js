@@ -21,24 +21,8 @@ export default async function handler(req, res) {
 
     const selectedOption = buttonIndex === 1 ? 'option1' : 'option2';
 
-    // First, check if the question exists and create it if it doesn't
-    const questionRef = db.collection('Questions').doc(questionId);
-    const questionDoc = await questionRef.get();
-
-    if (!questionDoc.exists) {
-      // Question doesn't exist, create it
-      await questionRef.set({
-        question: `Would you rather ${option1} or ${option2}?`,
-        option1,
-        option2,
-        option1Votes: 0,
-        option2Votes: 0,
-        totalVotes: 0,
-        createdAt: FieldValue.serverTimestamp()
-      });
-    }
-
     // Update question votes
+    const questionRef = db.collection('Questions').doc(questionId);
     await questionRef.update({
       [`${selectedOption}Votes`]: FieldValue.increment(1),
       totalVotes: FieldValue.increment(1)
@@ -62,13 +46,15 @@ export default async function handler(req, res) {
     const option1Percent = ((questionData.option1Votes || 0) / totalVotes) * 100;
     const option2Percent = ((questionData.option2Votes || 0) / totalVotes) * 100;
 
+    const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/resultOG?questionId=${questionId}&t=${Date.now()}`;
+
     // Generate the review HTML
     const reviewHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/resultOG?questionId=${questionId}" />
+          <meta property="fc:frame:image" content="${imageUrl}" />
           <meta property="fc:frame:button:1" content="Play Again" />
           <meta property="fc:frame:post_url" content="${process.env.NEXT_PUBLIC_BASE_URL}/api/playWouldYouRather" />
         </head>
@@ -81,6 +67,7 @@ export default async function handler(req, res) {
       </html>
     `;
 
+    res.setHeader('Content-Type', 'text/html');
     res.status(200).send(reviewHtml);
   } catch (error) {
     console.error('Error in updateVotes:', error);
