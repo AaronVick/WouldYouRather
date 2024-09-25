@@ -35,100 +35,87 @@ export default async function handler(req) {
     return new ImageResponse(
       (
         <div style={{
+          width: '100%',
+          height: '100%',
+          padding: '40px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          width: '100%',
-          height: '100%',
           backgroundColor: 'white',
-          padding: '40px',
         }}>
           <h1 style={{
             fontSize: '48px',
-            fontWeight: 'bold',
             marginBottom: '20px',
             textAlign: 'center',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>Results</h1>
+            display: 'block',
+          }}>
+            Results
+          </h1>
 
           <p style={{
             fontSize: '36px',
             textAlign: 'center',
+            marginBottom: '40px',
+            display: 'block',
             maxWidth: '80%',
             wordWrap: 'break-word',
-            marginBottom: '40px',
-            display: 'flex',
-            justifyContent: 'center'
           }}>
             {questionData.question}
           </p>
 
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
             width: '100%',
-            maxWidth: '600px'
+            maxWidth: '600px',
+            display: 'block',
           }}>
-            <div style={{
-              marginBottom: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start'
+            <p style={{
+              fontSize: '24px',
+              marginBottom: '10px',
+              display: 'block',
             }}>
-              <p style={{
-                fontSize: '24px',
-                marginBottom: '10px',
-                display: 'flex',
-                justifyContent: 'flex-start'
-              }}>{questionData.option1}: {option1Percent.toFixed(1)}%</p>
+              {questionData.option1}: {option1Percent.toFixed(1)}%
+            </p>
+            <div style={{
+              width: '100%',
+              height: '30px',
+              backgroundColor: '#e0e0e0',
+              position: 'relative',
+              display: 'block',
+            }}>
               <div style={{
-                width: '100%',
-                height: '30px',
-                backgroundColor: '#e0e0e0',
-                position: 'relative',
-                display: 'block'
-              }}>
-                <div style={{
-                  width: `${option1Percent}%`,
-                  height: '100%',
-                  backgroundColor: '#4CAF50',
-                  position: 'absolute',
-                  left: 0,
-                  top: 0
-                }} />
-              </div>
+                width: `${option1Percent}%`,
+                height: '100%',
+                backgroundColor: '#4CAF50',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+              }} />
             </div>
 
-            <div style={{
-              marginBottom: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start'
+            <p style={{
+              fontSize: '24px',
+              marginTop: '20px',
+              marginBottom: '10px',
+              display: 'block',
             }}>
-              <p style={{
-                fontSize: '24px',
-                marginBottom: '10px',
-                display: 'flex',
-                justifyContent: 'flex-start'
-              }}>{questionData.option2}: {option2Percent.toFixed(1)}%</p>
+              {questionData.option2}: {option2Percent.toFixed(1)}%
+            </p>
+            <div style={{
+              width: '100%',
+              height: '30px',
+              backgroundColor: '#e0e0e0',
+              position: 'relative',
+              display: 'block',
+            }}>
               <div style={{
-                width: '100%',
-                height: '30px',
-                backgroundColor: '#e0e0e0',
-                position: 'relative',
-                display: 'block'
-              }}>
-                <div style={{
-                  width: `${option2Percent}%`,
-                  height: '100%',
-                  backgroundColor: '#2196F3',
-                  position: 'absolute',
-                  left: 0,
-                  top: 0
-                }} />
-              </div>
+                width: `${option2Percent}%`,
+                height: '100%',
+                backgroundColor: '#2196F3',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+              }} />
             </div>
           </div>
         </div>
