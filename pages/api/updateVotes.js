@@ -36,13 +36,12 @@ export default async function handler(req, res) {
       [questionId]: selectedOption
     }, { merge: true });
 
-    // Fetch updated question data
-    const updatedQuestion = await questionRef.get();
-    const questionData = updatedQuestion.data();
-
-    if (!questionData) {
-      throw new Error('Failed to fetch updated question data');
+    // Fetch updated question data using getQuestionData endpoint
+    const questionDataResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getQuestionData?questionId=${questionId}`);
+    if (!questionDataResponse.ok) {
+      throw new Error(`Failed to fetch question data: ${questionDataResponse.statusText}`);
     }
+    const questionData = await questionDataResponse.json();
 
     console.log('Updated question data:', questionData);
 

@@ -1,5 +1,4 @@
 import { ImageResponse } from '@vercel/og';
-import { db } from '../../lib/firebase';
 
 export const config = {
   runtime: 'edge',
@@ -20,16 +19,13 @@ export default async function handler(req) {
       });
     }
 
-    const questionDoc = await db.collection('Questions').doc(questionId).get();
-    if (!questionDoc.exists) {
-      console.error('Question not found:', questionId);
-      return new Response(JSON.stringify({ error: 'Question not found' }), { 
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Fetch question data from a separate API route
+    const questionDataResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getQuestionData?questionId=${questionId}`);
+    if (!questionDataResponse.ok) {
+      throw new Error(`Failed to fetch question data: ${questionDataResponse.statusText}`);
     }
+    const questionData = await questionDataResponse.json();
 
-    const questionData = questionDoc.data();
     console.log('Question data:', questionData);
 
     const totalVotes = questionData.totalVotes || 1; // Prevent division by zero
