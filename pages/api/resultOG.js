@@ -52,17 +52,17 @@ export default async function handler(req) {
           <div style={{ fontSize: '36px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word', marginBottom: '40px' }}>
             {questionData.question}
           </div>
-          <div style={{ width: '100%', maxWidth: '600px' }}>
-            <div style={{ marginBottom: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option1}: {option1Percent.toFixed(1)}%</div>
-              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0' }}>
-                <div style={{ width: `${option1Percent}%`, height: '100%', backgroundColor: '#4CAF50' }}></div>
+              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
+                <div style={{ width: `${option1Percent}%`, height: '100%', backgroundColor: '#4CAF50', position: 'absolute', left: 0, top: 0 }} />
               </div>
             </div>
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option2}: {option2Percent.toFixed(1)}%</div>
-              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0' }}>
-                <div style={{ width: `${option2Percent}%`, height: '100%', backgroundColor: '#2196F3' }}></div>
+              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
+                <div style={{ width: `${option2Percent}%`, height: '100%', backgroundColor: '#2196F3', position: 'absolute', left: 0, top: 0 }} />
               </div>
             </div>
           </div>

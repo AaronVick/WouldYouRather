@@ -26,9 +26,23 @@ export default async function handler(req, res) {
 
     // Update question votes
     const questionRef = db.collection('Questions').doc(questionId);
-    await questionRef.update({
-      [`${selectedOption}Votes`]: FieldValue.increment(1),
-      totalVotes: FieldValue.increment(1)
+    
+    await db.runTransaction(async (transaction) => {
+      const questionDoc = await transaction.get(questionRef);
+      if (!questionDoc.exists) {
+        throw new Error('Question not found');
+      }
+
+      const questionData = questionDoc.data();
+      const option1Votes = (questionData.option1Votes || 0) + (selectedOption === 'option1' ? 1 : 0);
+      const option2Votes = (questionData.option2Votes || 0) + (selectedOption === 'option2' ? 1 : 0);
+      const totalVotes = option1Votes + option2Votes;
+
+      transaction.update(questionRef, {
+        option1Votes: option1Votes,
+        option2Votes: option2Votes,
+        totalVotes: totalVotes
+      });
     });
 
     // Record the user's vote
@@ -36,12 +50,9 @@ export default async function handler(req, res) {
       [questionId]: selectedOption
     }, { merge: true });
 
-    // Fetch updated question data using getQuestionData endpoint
-    const questionDataResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getQuestionData?questionId=${questionId}`);
-    if (!questionDataResponse.ok) {
-      throw new Error(`Failed to fetch question data: ${questionDataResponse.statusText}`);
-    }
-    const questionData = await questionDataResponse.json();
+    // Fetch updated question data
+    const updatedQuestion = await questionRef.get();
+    const questionData = updatedQuestion.data();
 
     console.log('Updated question data:', questionData);
 
