@@ -46,11 +46,6 @@ export default async function handler(req, res) {
 
     console.log('Updated question data:', questionData);
 
-    // Calculate percentages
-    const totalVotes = questionData.totalVotes || 1;  // Prevent division by zero
-    const option1Percent = ((questionData.option1Votes || 0) / totalVotes) * 100;
-    const option2Percent = ((questionData.option2Votes || 0) / totalVotes) * 100;
-
     const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/resultOG?questionId=${questionId}&t=${Date.now()}`;
 
     console.log('Generated image URL:', imageUrl);
@@ -68,8 +63,8 @@ export default async function handler(req, res) {
         <body>
           <h1>Results</h1>
           <p>${questionData.question}</p>
-          <p>${questionData.option1}: ${option1Percent.toFixed(1)}%</p>
-          <p>${questionData.option2}: ${option2Percent.toFixed(1)}%</p>
+          <p>${questionData.option1}: ${((questionData.option1Votes / questionData.totalVotes) * 100).toFixed(1)}%</p>
+          <p>${questionData.option2}: ${((questionData.option2Votes / questionData.totalVotes) * 100).toFixed(1)}%</p>
         </body>
       </html>
     `;
@@ -79,6 +74,6 @@ export default async function handler(req, res) {
     console.log('Response sent successfully');
   } catch (error) {
     console.error('Error in updateVotes:', error);
-    res.status(500).json({ error: 'Internal Server Error', message: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Internal Server Error', message: error.message });
   }
 }
