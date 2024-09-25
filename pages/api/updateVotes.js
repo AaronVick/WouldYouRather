@@ -5,6 +5,7 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  console.log('updateVotes handler called');
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -14,6 +15,8 @@ export default async function handler(req, res) {
     const { untrustedData } = req.body;
     const fid = untrustedData?.fid;
     const buttonIndex = untrustedData?.buttonIndex;
+
+    console.log('Received data:', { questionId, option1, option2, fid, buttonIndex });
 
     if (!fid || !questionId || !option1 || !option2 || !buttonIndex) {
       return res.status(400).json({ error: 'Missing required parameters' });
@@ -41,12 +44,16 @@ export default async function handler(req, res) {
       throw new Error('Failed to fetch updated question data');
     }
 
+    console.log('Updated question data:', questionData);
+
     // Calculate percentages
     const totalVotes = questionData.totalVotes || 1;  // Prevent division by zero
     const option1Percent = ((questionData.option1Votes || 0) / totalVotes) * 100;
     const option2Percent = ((questionData.option2Votes || 0) / totalVotes) * 100;
 
     const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/resultOG?questionId=${questionId}&t=${Date.now()}`;
+
+    console.log('Generated image URL:', imageUrl);
 
     // Generate the review HTML
     const reviewHtml = `
@@ -69,8 +76,9 @@ export default async function handler(req, res) {
 
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(reviewHtml);
+    console.log('Response sent successfully');
   } catch (error) {
     console.error('Error in updateVotes:', error);
-    res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    res.status(500).json({ error: 'Internal Server Error', message: error.message, stack: error.stack });
   }
 }

@@ -6,19 +6,25 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  console.log('resultOG handler called');
   try {
     const { questionId } = req.query;
+    console.log('Received questionId:', questionId);
 
     if (!questionId) {
+      console.error('Missing questionId parameter');
       return res.status(400).json({ error: 'Missing questionId parameter' });
     }
 
     const questionDoc = await db.collection('Questions').doc(questionId).get();
     if (!questionDoc.exists) {
+      console.error('Question not found:', questionId);
       return res.status(404).json({ error: 'Question not found' });
     }
 
     const questionData = questionDoc.data();
+    console.log('Question data:', questionData);
+
     const totalVotes = questionData.totalVotes || 1; // Prevent division by zero
     const option1Percent = ((questionData.option1Votes || 0) / totalVotes) * 100;
     const option2Percent = ((questionData.option2Votes || 0) / totalVotes) * 100;
@@ -67,9 +73,10 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.status(200).send(imageResponse);
+    console.log('Image response sent successfully');
 
   } catch (error) {
     console.error('Error in resultOG:', error);
-    res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    res.status(500).json({ error: 'Internal Server Error', message: error.message, stack: error.stack });
   }
 }
