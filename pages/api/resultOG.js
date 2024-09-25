@@ -34,35 +34,24 @@ export default async function handler(req) {
 
     return new ImageResponse(
       (
-        <div
-          style={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'white',
-            padding: '40px',
-          }}
-        >
-          <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-            Results
-          </div>
-          <div style={{ fontSize: '36px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word', marginBottom: '40px' }}>
-            {questionData.question}
-          </div>
-          <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option1}: {option1Percent.toFixed(1)}%</div>
-              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
-                <div style={{ width: `${option1Percent}%`, height: '100%', backgroundColor: '#4CAF50', position: 'absolute', left: 0, top: 0 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', backgroundColor: 'white', padding: '40px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+            <h1 style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>Results</h1>
+            <p style={{ fontSize: '36px', textAlign: 'center', maxWidth: '80%', wordWrap: 'break-word', marginBottom: '40px' }}>
+              {questionData.question}
+            </p>
+            <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option1}: {option1Percent.toFixed(1)}%</p>
+                <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
+                  <div style={{ width: `${option1Percent}%`, height: '100%', backgroundColor: '#4CAF50', position: 'absolute', left: 0, top: 0 }} />
+                </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option2}: {option2Percent.toFixed(1)}%</div>
-              <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
-                <div style={{ width: `${option2Percent}%`, height: '100%', backgroundColor: '#2196F3', position: 'absolute', left: 0, top: 0 }} />
+              <div>
+                <p style={{ fontSize: '24px', marginBottom: '10px' }}>{questionData.option2}: {option2Percent.toFixed(1)}%</p>
+                <div style={{ width: '100%', height: '30px', backgroundColor: '#e0e0e0', position: 'relative' }}>
+                  <div style={{ width: `${option2Percent}%`, height: '100%', backgroundColor: '#2196F3', position: 'absolute', left: 0, top: 0 }} />
+                </div>
               </div>
             </div>
           </div>
